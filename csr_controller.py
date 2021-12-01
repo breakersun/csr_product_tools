@@ -84,9 +84,22 @@ class E2cmdController(CSRControllerBase):
         super().__init__('e2cmd.exe')
         self.check_path()
 
-    def dump_eeprom(self, file_name):
+    def dump(self, file_name):
         cmd = shlex.split(f'dump {file_name}.img', posix=False)
         return self.executor(cmd)
+
+    def read_words(self, address, size_in_words) -> str:
+        cmd = shlex.split(f'readblock {address:x} {size_in_words}', posix=False)
+        output = self.executor(cmd, return_raw=True)
+        word_regx = re.compile(r'-\s(0x[0-9a-f]{4})')
+        words = []
+        for line in output.splitlines():
+            m = word_regx.search(line)
+            if m:
+                words.append(m.group(1))
+
+        # covert words to string seperated with space
+        return ' '.join(words)
 
 
 if __name__ == '__main__':
@@ -96,4 +109,4 @@ if __name__ == '__main__':
     logging.getLogger(__name__).setLevel(logging.DEBUG)
 
     tester = E2cmdController()
-    tester.dump_eeprom('eeprom.bin')
+    print(tester.read_words(0x414a, 20))
