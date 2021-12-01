@@ -1,6 +1,7 @@
 import logging
 import pathlib
 import re
+import shlex
 import shutil
 import subprocess
 
@@ -77,12 +78,22 @@ class CSRControllerBase:
                 return False
         return True
 
+
+class E2cmdController(CSRControllerBase):
+    def __init__(self):
+        super().__init__('e2cmd.exe')
+        self.check_path()
+
+    def dump_eeprom(self, file_name):
+        cmd = shlex.split(f'dump {file_name}.img', posix=False)
+        return self.executor(cmd)
+
+
 if __name__ == '__main__':
     FORMAT = "%(levelname)7s %(asctime)s [%(filename)13s:%(lineno)4d] %(message)s"
     DATEFMT = "%H:%M:%S"
     logging.basicConfig(level=logging.INFO, format=FORMAT, datefmt=DATEFMT)
     logging.getLogger(__name__).setLevel(logging.DEBUG)
 
-    tester = CSRControllerBase('e2cmd.exe')
-    tester.check_path()
-    print(tester)
+    tester = E2cmdController()
+    tester.dump_eeprom('eeprom.bin')
