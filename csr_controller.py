@@ -1,6 +1,8 @@
 import logging
 import pathlib
+import re
 import shutil
+import subprocess
 
 _logger = logging.getLogger(__name__)
 
@@ -28,6 +30,52 @@ class CSRControllerBase:
         _logger.warning(f'{self.cmder} is not found')
         raise FileNotFoundError(f'{self.cmder} is not found')
 
+    def executor(self, cmd, match_str=None, return_match=False, return_raw=False):
+        """
+        excute commander command and return the result
+        :param cmd:commands to be executed
+        :type cmd:str
+        :param match_str:regex string to match the result
+        :type match_str:str
+        :param return_match:true to return the match result; false to return the Yes/No result
+        :type return_match:Boolean
+        :param return_raw:true to return the raw result; false to return the match result
+        :type return_raw:Boolean
+        :return: return_raw == True: return the raw result or False
+                 return_raw == False && return_match == return True for Success, False for Fail
+                 return_raw == False && return_match == return the match result for success; False for Fail
+        :rtype:
+        """
+        _cmd = [self.cmder] + cmd
+        _logger.debug(f'[running] {_cmd}')
+        try:
+            output = subprocess.check_output(_cmd).decode('utf-8')
+        except subprocess.CalledProcessError as e:
+            if return_raw:
+                return e.output.decode('utf-8')
+            else:
+                _logger.error(e.output.decode('utf-8'))
+                _logger.error(f'[Failed] {_cmd}')
+                return False
+        _logger.debug(f'[response] {output}')
+        if return_raw:
+            return output
+        if match_str:
+            regex = re.compile(match_str)
+            for line in output.splitlines():
+                m = regex.match(line)
+                if m:
+                    _logger.debug(line)
+                    if return_match:
+                        return m.group(1)
+                    else:
+                        return True
+            _logger.debug(f'No match found {match_str}')
+            if return_match:
+                return None
+            else:
+                return False
+        return True
 
 if __name__ == '__main__':
     FORMAT = "%(levelname)7s %(asctime)s [%(filename)13s:%(lineno)4d] %(message)s"
