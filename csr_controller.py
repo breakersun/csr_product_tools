@@ -98,9 +98,11 @@ class E2cmdController(CSRControllerBase):
             if m:
                 words.append(m.group(1))
 
-        # covert words to string seperated with space
-        return ' '.join(words)
-
+        if len(words) == size_in_words:
+            return ' '.join(words)
+        else:
+            _logger.error(f'[Failed] read_words {address:x} {size_in_words}')
+            raise RuntimeError(f'[Failed] read_words {address:x} {size_in_words}')
 
 class CsconfigController(CSRControllerBase):
     def __init__(self):
@@ -121,6 +123,9 @@ class CsconfigController(CSRControllerBase):
             m = bdaddr_regx.search(keyr)
             if m:
                 return ''.join(m.group(3, 2, 1))
+            else:
+                _logger.error(f'[Failed] get_bdaddr {keyr_file}')
+                raise RuntimeError(f'[Failed] get_bdaddr {keyr_file}')
 
     def get_ctune(self, keyr_file):
         ctune_regx = re.compile(r'&CRYSTAL_FTRIM\s=\s([0-9a-f]{4})')
@@ -129,6 +134,9 @@ class CsconfigController(CSRControllerBase):
             m = ctune_regx.search(keyr)
             if m:
                 return m.group(1)
+            else:
+                _logger.error(f'[Failed] get_ctune {keyr_file}')
+                raise RuntimeError(f'[Failed] get_ctune {keyr_file}')
 
 
 if __name__ == '__main__':
